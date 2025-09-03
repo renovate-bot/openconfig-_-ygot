@@ -1680,3 +1680,203 @@ func TestLeastSpecificPath(t *testing.T) {
 		}
 	}
 }
+
+type TestDiffDeleteStruct struct {
+	Leaf          *string                               `path:"leaf"`
+	LeafList      []string                              `path:"leaf-list"`
+	OrderedMap    map[string]*TestDiffDeleteStructChild `path:"ordered-map" ordered-by:"user"`
+	Binary        Binary                                `path:"binary"`
+	UInt8LeafList []uint8                               `path:"u-int8-leaf-list"`
+}
+
+type TestDiffDeleteStructChild struct {
+	ChildLeaf *string `path:"child-leaf"`
+}
+
+func (*TestDiffDeleteStruct) IsYANGGoStruct() {}
+
+func (*TestDiffDeleteStructChild) IsYANGGoStruct() {}
+
+func (t *TestDiffDeleteStruct) ΛListKeyMap() (map[string]any, error) {
+	return nil, nil
+}
+
+func (t *TestDiffDeleteStructChild) ΛListKeyMap() (map[string]any, error) {
+	return nil, nil
+}
+
+func TestDiffOverrideLeafList(t *testing.T) {
+	tests := []struct {
+		name     string
+		original *TestDiffDeleteStruct
+		modified *TestDiffDeleteStruct
+		opts     []DiffOpt
+		want     *gnmipb.Notification
+		wantErr  bool
+	}{{
+		name: "delete leaf list",
+		original: &TestDiffDeleteStruct{
+			LeafList:      []string{"a", "b"},
+			Binary:        Binary("binary-old"),
+			UInt8LeafList: []uint8{1, 2, 3},
+		},
+		modified: &TestDiffDeleteStruct{
+			LeafList:      []string{"b", "c"},
+			Binary:        Binary("binary-new"),
+			UInt8LeafList: []uint8{4, 5, 6},
+		},
+		opts: []DiffOpt{&DiffPathOpt{OverrideLeafList: true}},
+		want: &gnmipb.Notification{
+			Delete: []*gnmipb.Path{
+				{Elem: []*gnmipb.PathElem{{Name: "leaf-list"}}},
+				{Elem: []*gnmipb.PathElem{{Name: "u-int8-leaf-list"}}},
+				// Binary is not deleted because it is not a leaf-list.
+			},
+			Update: []*gnmipb.Update{{
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "leaf-list"}}},
+				Val: &gnmipb.TypedValue{
+					Value: &gnmipb.TypedValue_LeaflistVal{
+						LeaflistVal: &gnmipb.ScalarArray{
+							Element: []*gnmipb.TypedValue{
+								{Value: &gnmipb.TypedValue_StringVal{StringVal: "b"}},
+								{Value: &gnmipb.TypedValue_StringVal{StringVal: "c"}},
+							},
+						},
+					},
+				},
+			}, {
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "binary"}}},
+				Val:  &gnmipb.TypedValue{Value: &gnmipb.TypedValue_BytesVal{BytesVal: []byte("binary-new")}},
+			}, {
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "u-int8-leaf-list"}}},
+				Val: &gnmipb.TypedValue{Value: &gnmipb.TypedValue_LeaflistVal{
+					LeaflistVal: &gnmipb.ScalarArray{
+						Element: []*gnmipb.TypedValue{
+							{Value: &gnmipb.TypedValue_UintVal{4}},
+							{Value: &gnmipb.TypedValue_UintVal{5}},
+							{Value: &gnmipb.TypedValue_UintVal{6}},
+						},
+					},
+				}},
+			}},
+		},
+	}, {
+		name: "no delete leaf list",
+		original: &TestDiffDeleteStruct{
+			LeafList:      []string{"a", "b"},
+			Binary:        Binary("binary-old"),
+			UInt8LeafList: []uint8{1, 2, 3},
+		},
+		modified: &TestDiffDeleteStruct{
+			LeafList:      []string{"b", "c"},
+			UInt8LeafList: []uint8{4, 5, 6},
+			Binary:        Binary("binary-new"),
+		},
+		want: &gnmipb.Notification{
+			Update: []*gnmipb.Update{{
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "leaf-list"}}},
+				Val: &gnmipb.TypedValue{
+					Value: &gnmipb.TypedValue_LeaflistVal{
+						LeaflistVal: &gnmipb.ScalarArray{
+							Element: []*gnmipb.TypedValue{
+								{Value: &gnmipb.TypedValue_StringVal{StringVal: "b"}},
+								{Value: &gnmipb.TypedValue_StringVal{StringVal: "c"}},
+							},
+						},
+					},
+				},
+			}, {
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "binary"}}},
+				Val:  &gnmipb.TypedValue{Value: &gnmipb.TypedValue_BytesVal{BytesVal: []byte("binary-new")}},
+			}, {
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "u-int8-leaf-list"}}},
+				Val: &gnmipb.TypedValue{Value: &gnmipb.TypedValue_LeaflistVal{
+					LeaflistVal: &gnmipb.ScalarArray{
+						Element: []*gnmipb.TypedValue{
+							{Value: &gnmipb.TypedValue_UintVal{4}},
+							{Value: &gnmipb.TypedValue_UintVal{5}},
+							{Value: &gnmipb.TypedValue_UintVal{6}},
+						},
+					},
+				}},
+			}},
+		},
+	}, {
+		name: "no change leaf list",
+		original: &TestDiffDeleteStruct{
+			LeafList: []string{"a", "b"},
+		},
+		modified: &TestDiffDeleteStruct{
+			LeafList: []string{"a", "b"},
+		},
+		opts: []DiffOpt{&DiffPathOpt{OverrideLeafList: true}},
+		want: &gnmipb.Notification{},
+	}, {
+		name:     "add leaf list",
+		original: &TestDiffDeleteStruct{},
+		modified: &TestDiffDeleteStruct{
+			LeafList:      []string{"b", "c"},
+			Binary:        Binary("binary-new"),
+			UInt8LeafList: []uint8{4, 5, 6},
+		},
+		opts: []DiffOpt{&DiffPathOpt{OverrideLeafList: true}},
+		want: &gnmipb.Notification{
+			Update: []*gnmipb.Update{{
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "leaf-list"}}},
+				Val: &gnmipb.TypedValue{
+					Value: &gnmipb.TypedValue_LeaflistVal{
+						LeaflistVal: &gnmipb.ScalarArray{
+							Element: []*gnmipb.TypedValue{
+								{Value: &gnmipb.TypedValue_StringVal{StringVal: "b"}},
+								{Value: &gnmipb.TypedValue_StringVal{StringVal: "c"}},
+							},
+						},
+					},
+				},
+			}, {
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "binary"}}},
+				Val:  &gnmipb.TypedValue{Value: &gnmipb.TypedValue_BytesVal{BytesVal: []byte("binary-new")}},
+			}, {
+				Path: &gnmipb.Path{Elem: []*gnmipb.PathElem{{Name: "u-int8-leaf-list"}}},
+				Val: &gnmipb.TypedValue{Value: &gnmipb.TypedValue_LeaflistVal{
+					LeaflistVal: &gnmipb.ScalarArray{
+						Element: []*gnmipb.TypedValue{
+							{Value: &gnmipb.TypedValue_UintVal{4}},
+							{Value: &gnmipb.TypedValue_UintVal{5}},
+							{Value: &gnmipb.TypedValue_UintVal{6}},
+						},
+					},
+				}},
+			}},
+		},
+	}, {
+		name: "delete leaf list",
+		original: &TestDiffDeleteStruct{
+			LeafList:      []string{"a", "b"},
+			Binary:        Binary("binary"),
+			UInt8LeafList: []uint8{1, 2, 3},
+		},
+		modified: &TestDiffDeleteStruct{},
+		opts:     []DiffOpt{&DiffPathOpt{OverrideLeafList: true}},
+		want: &gnmipb.Notification{
+			Delete: []*gnmipb.Path{
+				{Elem: []*gnmipb.PathElem{{Name: "leaf-list"}}},
+				{Elem: []*gnmipb.PathElem{{Name: "binary"}}},
+				{Elem: []*gnmipb.PathElem{{Name: "u-int8-leaf-list"}}},
+			},
+		},
+	}}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, err := Diff(tt.original, tt.modified, tt.opts...)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("Diff() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if diff := cmp.Diff(tt.want, got, protocmp.Transform(), protocmp.SortRepeatedFields((*gnmipb.Notification)(nil), "update", "delete")); diff != "" {
+				t.Errorf("Diff() returned unexpected diff (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
