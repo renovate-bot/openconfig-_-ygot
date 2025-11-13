@@ -2,7 +2,7 @@ module github.com/openconfig/ygot
 
 go 1.24.0
 
-toolchain go1.25.3
+toolchain go1.25.4
 
 require (
 	github.com/derekparker/trie v0.0.0-20230829180723-39f4de51ef7d
@@ -17,7 +17,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
-	golang.org/x/exp v0.0.0-20251009144603-d2f985daa21b
+	golang.org/x/exp v0.0.0-20251113190631-e25ba8c21ef6
 	google.golang.org/grpc v1.76.0
 	google.golang.org/protobuf v1.36.10
 )
