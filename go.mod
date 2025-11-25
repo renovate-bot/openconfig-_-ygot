@@ -2,7 +2,7 @@ module github.com/openconfig/ygot
 
 go 1.24.0
 
-toolchain go1.25.3
+toolchain go1.25.4
 
 require (
 	github.com/derekparker/trie v0.0.0-20230829180723-39f4de51ef7d
@@ -17,8 +17,8 @@ require (
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2
 	github.com/spf13/cobra v1.10.1
 	github.com/spf13/viper v1.21.0
-	golang.org/x/exp v0.0.0-20251009144603-d2f985daa21b
-	google.golang.org/grpc v1.76.0
+	golang.org/x/exp v0.0.0-20251125195548-87e1e737ad39
+	google.golang.org/grpc v1.77.0
 	google.golang.org/protobuf v1.36.10
 )
 
@@ -36,8 +36,8 @@ require (
 	github.com/spf13/pflag v1.0.10 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
-	golang.org/x/net v0.42.0 // indirect
-	golang.org/x/sys v0.34.0 // indirect
-	golang.org/x/text v0.28.0 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20250804133106-a7a43d27e69b // indirect
+	golang.org/x/net v0.46.1-0.20251013234738-63d1a5100f82 // indirect
+	golang.org/x/sys v0.37.0 // indirect
+	golang.org/x/text v0.30.0 // indirect
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20251022142026-3a174f9686a8 // indirect
 )
